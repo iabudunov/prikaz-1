@@ -4,24 +4,35 @@
   <meta charset="UTF-8">
   <title>Генерация приказа PDF</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
-  <div style="max-width: 700px; margin: auto; padding: 20px; border: 1px solid #ccc;">
+  <div class="container">
     <h3>Заполните данные для приказа</h3>
     <form id="contract-form">
-      <label>ООО:</label><br>
+      <label><strong>ООО:</strong></label><br>
       <input type="text" id="fullOOO" required><br><br>
 
-      <label>ФИО:</label><br>
+      <label><strong>ФИО:</strong></label><br>
       <input type="text" id="fullName" required><br><br>
 
-      <label>Дата заключения приказа:</label><br>
+      <label><strong>Дата заключения приказа:</strong></label><br>
       <input type="date" id="date" required><br><br>
 
       <button type="submit">Создать приказ (PDF)</button>
     </form>
 
-    <a id="download-link" style="display:none; margin-top: 20px;" download="dogovor.pdf">📄 Скачать договор PDF</a>
+    <a id="download-link" style="display:none; margin-top: 20px;" download="prikaz.pdf">📄 Скачать приказ PDF</a>
   </div>
 
   <script>
@@ -33,9 +44,10 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      doc.addFileToVFS("times.ttf", fontBase64);
-      doc.addFont("times.ttf", "TimesNewRoman", "normal");
-      doc.setFont("TimesNewRoman");
+      // Если добавляешь свой шрифт:
+      // doc.addFileToVFS("times.ttf", fontBase64);
+      // doc.addFont("times.ttf", "TimesNewRoman", "normal");
+      // doc.setFont("TimesNewRoman");
 
       const fullOOO = document.getElementById('fullOOO').value;
       const fullName = document.getElementById('fullName').value;
@@ -43,89 +55,44 @@
 
       doc.setFontSize(12);
 
-      // Центрированный жирный заголовок
+      // Верхний блок
       doc.setFont(undefined, 'bold');
       doc.text(`Общество с ограниченной ответственностью «${fullOOO}»`, 105, 20, { align: 'center' });
+      doc.text(`ПРИКАЗ №1`, 105, 30, { align: 'center' });
 
-      doc.text(`Приказ №1`, 105, 30, { align: 'center' });
-
-      // Место и дата — по краям
       doc.setFont(undefined, 'normal');
       doc.text(`с. Тпиг`, 15, 40);
-      doc.text(`${date} г.`, 180, 40, { align: 'right' });
+      doc.text(`${date} г.`, 195, 40, { align: 'right' });
 
-      // Центрированный заголовок
+      // Заголовок
       doc.setFont(undefined, 'bold');
-      doc.text("О вступлении в должность генерального директора Общества", 105, 50, { align: 'center' });
+      doc.text(`О вступлении в должность генерального директора Общества`, 105, 50, { align: 'center' });
 
       // Основной текст
       doc.setFont(undefined, 'normal');
-      const contractBody = `
+      const bodyText = `
 1. На основании Решения № 1 от 08 апреля 2025 года Единственного учредителя Общества с ограниченной ответственностью «${fullOOO}» я, ${fullName} вступаю в должность генерального директора Общества с ${date} года.
 
 2. Возлагаю обязанности главного бухгалтера на себя.
 
 3. Приказ вступает в силу с момента его подписания.
-    `;
+      `;
+      const lines = doc.splitTextToSize(bodyText.trim(), 180);
+      doc.text(lines, 15, 65);
 
-    const lines = doc.splitTextToSize(contractBody.trim(), 180);
-    doc.text(lines, 15, 65);
+      // Подпись
+      doc.text(`Генеральный директор ООО «${fullOOO}»`, 15, 140);
+      doc.text(`${fullName}`, 195, 140, { align: 'right' });
 
-    // Подпись
-    doc.text(`Генеральный директор ООО «${fullOOO}»`, 15, 140);
-    doc.text(`${fullName.split(' ').map(w => w[0]).join('.')}`, 180, 140, { align: 'right' });
-
-    const pdfBlob = doc.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-
-    const link = document.getElementById('download-link');
-    link.href = url;
-    link.style.display = 'inline-block';
-    link.textContent = "📄 Скачать договор PDF";
-  });    
-  document.getElementById('contract-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      doc.addFileToVFS("times.ttf", fontBase64);
-      doc.addFont("times.ttf", "TimesNewRoman", "normal");
-      doc.setFont("TimesNewRoman");
-
-      const fullOOO = document.getElementById('fullOOO').value;
-      const fullName = document.getElementById('fullName').value;
-      const date = document.getElementById('date').value;
-
-      const contractText = `
-                  Общество с ограниченной ответственностью «${fullOOO}» 
-                  
-                                     Приказ №1 
-                                     
-с. Тпиг                                                                         ${date} г.
-
-
-            О вступлении в должность генерального директора Общества
-1. На основании Решения № 1 от 08 апреля 2025 года Единственного учредителя Общества с ограниченной ответственностью «${fullOOO}» я, ${fullName} вступаю в должность генерального директора Общества с ${date} года. 
-2. Возлагаю обязанности главного бухгалтера на себя.
-3. Приказ вступает в силу с момента его подписания
-
-Генеральный директор ООО «Астерион»                                             Набиев И.С.
-`;
-
-      const lines = doc.splitTextToSize(contractText, 180);
-      doc.setFontSize(12);
-      doc.text(lines, 15, 20);
-
+      // Вывод
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
 
       const link = document.getElementById('download-link');
       link.href = url;
       link.style.display = 'inline-block';
-      link.textContent = "📄 Скачать договор PDF";
+      link.textContent = "📄 Скачать приказ PDF";
     });
-
   </script>
 </body>
 </html>
